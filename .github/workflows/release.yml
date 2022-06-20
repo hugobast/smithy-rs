@@ -1,0 +1,47 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# This workflow performs a release of smithy-rs. It is manually
+# kicked off via GitHub Actions workflow dispatch.
+
+# Allow only one release to run at a time
+concurrency:
+  group: release-smithy-rs
+  cancel-in-progress: true
+
+name: Release smithy-rs
+on:
+  # TODO: Remove push trigger
+  push:
+    branches:
+    - jdisanti-smithy-rs-release
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Dry runs will only produce release artifacts, but will not cut a release tag in GitHub nor publish to crates.io
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  release-ci:
+    name: Prerelease checks
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: Release
+    needs: release-ci
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        path: smithy-rs
+    - name: Build runtime bundle
+      uses: ./smithy-rs/.github/actions/docker-build
+      with:
+        action: generate-smithy-rs-runtime-bundle
+    - name: Publish to crates.io
+      if: ${{ !inputs.dry_run }}
+      shell: bash
+      run: |
+        echo "TODO: Implement publish"
