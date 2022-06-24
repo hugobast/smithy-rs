@@ -7,7 +7,6 @@
 //!
 //! [Smithy specification]: https://awslabs.github.io/smithy/1.0/spec/core/http-traits.html
 
-use self::future::RouterFuture;
 use self::request_spec::RequestSpec;
 use self::tiny_map::TinyMap;
 use crate::body::{boxed, Body, BoxBody, HttpBody};
@@ -35,7 +34,10 @@ pub mod request_spec;
 mod route;
 mod tiny_map;
 
-pub use self::{into_make_lambda_service::IntoMakeLambdaService, into_make_service::IntoMakeService, route::Route};
+pub use self::{
+    future::RouterFuture, into_make_lambda_service::IntoMakeLambdaService, into_make_service::IntoMakeService,
+    route::Route,
+};
 
 /// The router is a [`tower::Service`] that routes incoming requests to other `Service`s
 /// based on the request's URI and HTTP method or on some specific header setting the target operation.
@@ -384,7 +386,11 @@ where
 #[cfg(test)]
 mod rest_tests {
     use super::*;
-    use crate::{body::{boxed, BoxBody}, routing::request_spec::*, test_helpers::get_body_as_string};
+    use crate::{
+        body::{boxed, BoxBody},
+        routing::request_spec::*,
+        test_helpers::get_body_as_string,
+    };
     use futures_util::Future;
     use http::{HeaderMap, Method};
     use std::pin::Pin;

@@ -5,7 +5,6 @@
 
 // This code was heavily inspired by https://github.com/hanabu/lambda-web
 
-use crate::BoxError;
 use futures_util::future::BoxFuture;
 use http::{uri, Response};
 use http_body::Body;
@@ -19,6 +18,8 @@ use std::{
     task::{Context, Poll},
 };
 use tower::Service;
+
+use crate::error::BoxError;
 
 type HyperRequest = http::Request<HyperBody>;
 
