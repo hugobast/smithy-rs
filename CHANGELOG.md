@@ -1,3 +1,9 @@
+<!-- Do not manually edit this file. Use the `changelogger` tool. -->
+v0.44.0 (June 24th, 2022)
+=========================
+**New this release:**
+- 🎉 ([smithy-rs#1411](https://github.com/awslabs/smithy-rs/issues/1411), [smithy-rs#1167](https://github.com/awslabs/smithy-rs/issues/1167)) Upgrade to Gradle 7. This change is not a breaking change, however, users of smithy-rs will need to switch to JDK 17
+
 <!-- Do not manually edit this file, use `update-changelogs` -->
 v0.44.0 (June 22nd, 2022)
 =========================
