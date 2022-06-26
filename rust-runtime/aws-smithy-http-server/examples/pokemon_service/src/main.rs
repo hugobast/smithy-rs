@@ -7,9 +7,9 @@
 use std::{net::SocketAddr, sync::Arc};
 
 use aws_smithy_http_server::{AddExtensionLayer, Router};
+use clap::Parser;
 #[allow(unused_imports)]
 use lambda_http::{run as run_on_lambda, RequestExt as _};
-use clap::Parser;
 use pokemon_service::{empty_operation, get_pokemon_species, get_server_statistics, setup_tracing, State};
 use pokemon_service_sdk::operation_registry::OperationRegistryBuilder;
 use tower::ServiceBuilder;

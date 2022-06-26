@@ -9,7 +9,7 @@ description = "A smithy Rust service to retrieve information about Pokémon."
 [dependencies]
 clap = { version = "~3.2.1", features = ["derive"] }
 hyper = {version = "0.14", features = ["server"] }
-lambda_http = "0.5"
+lambda_http = { git = "https://github.com/hugobast/aws-lambda-rust-runtime" }
 tokio = "1"
 tower = "0.4"
 tower-http = { version = "0.3", features = ["trace"] }

@@ -7,19 +7,16 @@
 
 use futures_util::future::BoxFuture;
 use http::{uri, Response};
-use http_body::Body;
+use http_body::Body as HttpBody;
 use hyper::Body as HyperBody;
 #[allow(unused_imports)]
 use lambda_http::{Body as LambdaBody, Request, RequestExt as _};
 use std::{
     convert::Infallible,
-    error::Error,
     fmt::Debug,
     task::{Context, Poll},
 };
 use tower::Service;
-
-use crate::error::BoxError;
 
 type HyperRequest = http::Request<HyperBody>;
 
@@ -41,47 +38,35 @@ impl<S, B> Service<Request> for IntoMakeLambdaService<S>
 where
     S: Service<HyperRequest, Response = Response<B>, Error = Infallible> + Clone + Send + 'static,
     S::Future: Send + 'static,
-    B: Body + Send + Debug,
-    <B as Body>::Error: Error + Send + Sync + 'static,
-    <B as Body>::Data: Send,
+    B: HttpBody + Send + 'static,
 {
-    type Error = BoxError;
-    type Response = Response<LambdaBody>;
-    type Future = MakeRouteLambdaServiceFuture;
+    type Response = Response<B>;
+    type Error = Infallible;
+    type Future = MakeRouteLambdaServiceFuture<B>;
 
-    #[inline]
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.service.poll_ready(cx).map_err(|err| err.into())
     }
 
-    /// Lambda handler function
-    /// Parse Lambda request as hyper request,
-    /// serialize hyper response to Lambda response
-    fn call(&mut self, event: Request) -> Self::Future {
-        // As recommended in https://github.com/tower-rs/tower/issues/547
+    fn call(&mut self, req: Request) -> Self::Future {
         let clone = self.service.clone();
         let mut inner = std::mem::replace(&mut self.service, clone);
 
         let fut = async move {
-            // Parse request
-            let hyper_request = lambda_to_hyper_request(event)?;
-
-            // Call Hyper service when request parsing succeeded
-            let response = inner.call(hyper_request).await?;
-
-            // Return Lambda response after finished calling inner service
-            hyper_to_lambda_response(response).await
+            let hyper_request = lambda_to_hyper_request(req)?;
+            inner.call(hyper_request).await
         };
+
         MakeRouteLambdaServiceFuture::new(Box::pin(fut))
     }
 }
 
 opaque_future! {
     /// Response future for [`IntoMakeLambdaService`] services.
-    pub type MakeRouteLambdaServiceFuture = BoxFuture<'static, Result<Response<LambdaBody>, BoxError>>;
+    pub type MakeRouteLambdaServiceFuture<B> = BoxFuture<'static, Result<Response<B>, Infallible>>;
 }
 
-fn lambda_to_hyper_request(request: Request) -> Result<HyperRequest, BoxError> {
+fn lambda_to_hyper_request(request: Request) -> Result<HyperRequest, Infallible> {
     tracing::debug!("Converting Lambda to Hyper request...");
     // Raw HTTP path without any stage information
     let raw_path = request.raw_http_path();
@@ -112,20 +97,6 @@ fn lambda_to_hyper_request(request: Request) -> Result<HyperRequest, BoxError> {
     let req = http::Request::from_parts(parts, body);
     tracing::debug!("Hyper request converted successfully.");
     Ok(req)
-}
-
-async fn hyper_to_lambda_response<B>(response: Response<B>) -> Result<Response<LambdaBody>, BoxError>
-where
-    B: Body + Debug,
-    <B as Body>::Error: Error + Send + Sync + 'static,
-{
-    tracing::debug!("Converting Hyper to Lambda response...");
-    // Divide response into headers and body
-    let (parts, body) = response.into_parts();
-    let body = hyper::body::to_bytes(body).await?;
-    let res = Response::from_parts(parts, LambdaBody::from(body.as_ref()));
-    tracing::debug!("Lambda response converted successfully.");
-    Ok(res)
 }
 
 #[cfg(test)]
