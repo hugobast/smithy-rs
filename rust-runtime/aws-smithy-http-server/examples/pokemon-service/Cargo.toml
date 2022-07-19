@@ -10,7 +10,7 @@ description = "A smithy Rust service to retrieve information about Pokémon."
 async-stream = "0.3"
 clap = { version = "~3.2.1", features = ["derive"] }
 hyper = {version = "0.14.12", features = ["server"] }
-lambda_http = { git = "https://github.com/awslabs/aws-lambda-rust-runtime" }
+lambda_http = "0.6.0"
 rand = "0.8"
 tokio = "1"
 tower = "0.4"
